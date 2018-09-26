@@ -1,7 +1,7 @@
 Description:
 ============
 
-Simple shellcode for Linux/x86-64/Elf64. It start /bin/sh.
+Simple shellcode for Linux/x86-64/Elf64. It starts /bin/sh.
 
 make<BR>
 make test<BR>
