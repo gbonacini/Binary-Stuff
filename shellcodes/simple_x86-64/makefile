@@ -6,7 +6,7 @@ shell2: shell2.asm
 	@ld -o shell2 shell2.o
 
 shell2.hex : shell2
-	@objdump -d shell2 | grep '^[ ]' | cut -f2 | awk -F' ' '{for (i = 1; i <= NF; ++i) printf "\\\\x"$$i }' > shell2.hex
+	@objdump -d shell2 | grep '^[ ]' | cut -f2 | awk '{for(i=1; i<=NF; ++i) printf "\\\\x"$$i }' > shell2.hex
 
 clean:
 	rm -f shell2.hex shell2.o shell2 test.cpp test
