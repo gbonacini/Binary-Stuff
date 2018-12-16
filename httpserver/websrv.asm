@@ -4,8 +4,8 @@
 global _start
 _start:
           mov       rax,      41                ; socket syscall (41)
-	  mov       rdi,      2                 
-	  mov       rsi,      1                 
+          mov       rdi,      2                 
+          mov       rsi,      1                 
           xor       rdx,      rdx               
           syscall                               
 
@@ -66,7 +66,7 @@ _start:
 
 
           ender:
-          call starter	                        
+          call starter                         
 
 [SECTION .rodata]
           page:     db        "HTTP/1.1 200 OK",10,10,"<html><header></header><body>Hello world</body></html>"
