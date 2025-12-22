@@ -4,7 +4,7 @@ namespace minIO {
 
 #if defined(__x86_64__)
 
-using uint64_t=unsigned long long int;
+using uint64_t=unsigned long long;
 
 int printScreen(const char* txt, uint64_t len){
 
