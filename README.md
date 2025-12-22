@@ -1,7 +1,8 @@
 Description:
 ============
 
-Repository created to collect utility programs and scripts related to executables, os, binary formats, etc
+* Repository created to collect utility programs, concepts and scripts related to executables, os, binary formats, etc;
+* See README.md file present in each subdirectory for a brief description of the contents.
 
 DISCLAIMER:
 ===========
