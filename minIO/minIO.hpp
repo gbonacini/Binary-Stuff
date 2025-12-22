@@ -8,7 +8,7 @@ using uint64_t=unsigned long long int;
 
 int printScreen(const char* txt, uint64_t len){
 
-    int ret = { -1 };
+    int ret { -1 };
 
     asm volatile (
         "\nmov %1, %%rax"
