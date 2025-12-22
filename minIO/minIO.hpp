@@ -9,6 +9,7 @@ using uint64_t=unsigned long long;
 int printScreen(const char* txt, uint64_t len){
 
     int ret { -1 };
+    if(len == 0 || txt == nullptr) return ret;
 
     asm volatile (
         "\nmov %1, %%rax"
@@ -28,8 +29,11 @@ int printScreen(const char* txt, uint64_t len){
 }
 
 uint64_t strnlen(const char* txt, uint64_t maxDigits){
+
+    if(maxDigits == 0 || txt == nullptr) return 0;
+
     uint64_t len { 0 };
-    for( ; txt[len] != 0; len++);
+    for( ; txt[len] != 0 && len < maxDigits; len++);
     
     return len <= maxDigits ? len : 0;
 }
