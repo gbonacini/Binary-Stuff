@@ -15,7 +15,6 @@ int printScreen(const char* txt, uint64_t len){
         "\nmov %3, %%rsi"
         "\nmov %4, %%rdx"
         "\nsyscall\n\t"
-        "\nmov %%eax, %0"
         : "=r" (ret)
         : "i"  (1LL), 
           "i"  (1LL),
