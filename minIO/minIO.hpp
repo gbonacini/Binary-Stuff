@@ -32,7 +32,7 @@ int printScreen(const char* txt, uint64_t len){
         "\nmov %2, %%rdi"
         "\nmov %3, %%rsi"
         "\nmov %4, %%rdx"
-        "\nsyscall\n\t"
+        "\nsyscall"
         "\nmov %%eax, %0"
         : "=r" (ret)
         : "i"  (1LL), 
