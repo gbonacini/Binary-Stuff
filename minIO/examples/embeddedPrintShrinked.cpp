@@ -1,17 +1,19 @@
 #include <minIO.hpp>
 
-int main(int argc, char** argv){
+int main(void){
 
    using minIO::printScreen,
          minIO::printNumber,
          minIO::strnlen,
+         minIO::uint64_t,
          minIO::exit;
 
    const char* msg { "message\n" };
-   unsigned long long ret { printScreen(msg, 8) };
+   volatile uint64_t ret { printScreen(msg, strnlen(msg,9)) };
    printScreen("\nret:", 5);
    printNumber(ret);
    printScreen("\n", 1);
    
    exit();
 }
+

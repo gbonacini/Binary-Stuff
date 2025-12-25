@@ -79,7 +79,7 @@ void printNumber(uint64_t number){
     static unsigned char  numTxt[MAX_DIGITS];
     
     if(number != 0){
-       int idx{0};
+       volatile int idx{0};
        for(; idx < MAX_DIGITS; idx++) numTxt[idx] = 0;
 
        idx=MAX_DIGITS-1;

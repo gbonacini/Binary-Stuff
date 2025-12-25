@@ -1,10 +1,12 @@
+CPP_FLAGS=-O0
+
 all : embeddedPrint embeddedPrintShrinked embeddedPrintStriped embeddedPrintShrinkedStriped compare_size
 
 embeddedPrint : embeddedPrint.cpp
-	g++ -I.. -static -std=c++17 -O2 -o embeddedPrint embeddedPrint.cpp
+	g++ -I.. -static -std=c++17 ${CPP_FLAGS} -o embeddedPrint embeddedPrint.cpp
 
 embeddedPrintShrinked : embeddedPrintShrinked.cpp
-	g++ -I.. -static -nostdlib -std=c++17 -O2 -o embeddedPrintShrinked embeddedPrintShrinked.cpp
+	g++ -I.. -static -nostdlib -e main -std=c++17 ${CPP_FLAGS} -o embeddedPrintShrinked embeddedPrintShrinked.cpp
 
 compare_size :  embeddedPrint embeddedPrintStriped embeddedPrintShrinked
 	@echo "\nNote thed differences in size between the executables just created:\n"
