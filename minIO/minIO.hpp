@@ -14,6 +14,7 @@
 // Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 // -----------------------------------------------------------------
 
+
 #pragma once
 
 namespace minIO {
@@ -22,9 +23,9 @@ namespace minIO {
 
 using uint64_t=unsigned long long;
 
-int printScreen(const char* txt, uint64_t len){
+uint64_t printScreen(const char* txt, uint64_t len){
 
-    int ret { -1 };
+    long long ret { -1 };
     if(len == 0 || txt == nullptr) return ret;
 
     asm volatile (
@@ -33,15 +34,28 @@ int printScreen(const char* txt, uint64_t len){
         "\nmov %3, %%rsi"
         "\nmov %4, %%rdx"
         "\nsyscall"
-        "\nmov %%eax, %0"
+        "\nmov %%rax, %0"
         : "=r" (ret)
-        : "i"  (1LL), 
-          "i"  (1LL),
+        : "i"  (1ULL),
+          "i"  (1ULL),
           "r"  (txt),
           "r"  (len)
         : "%rax", "%rdi", "%rsi", "%rdx");
 
-    return ret;
+    return ret > 0 ? ret: 0;
+}
+
+void exit(bool err=false){
+
+    uint64_t ret { err ? 1ULL : 0ULL };
+    asm volatile (
+        "\nmov %0, %%rax"
+        "\nmov %1, %%rdi"
+        "\nsyscall"
+        : // void
+        : "i"  (0x3cULL),
+          "r"  (ret)
+        : "%rax", "%rdi");
 }
 
 uint64_t strnlen(const char* txt, uint64_t maxDigits){
@@ -50,8 +64,38 @@ uint64_t strnlen(const char* txt, uint64_t maxDigits){
 
     uint64_t len { 0 };
     for( ; txt[len] != 0 && len < maxDigits; len++);
-    
+
     return len <= maxDigits ? len : 0;
+}
+
+void printDigit(unsigned char digit){
+    static const char lookup[11] { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ' ' };
+
+    printScreen(&lookup[digit < 10 ? digit : 10], 1);
+}
+
+void printNumber(uint64_t number){
+    const unsigned int    MAX_DIGITS         { 20 };
+    static unsigned char  numTxt[MAX_DIGITS];
+    
+    if(number != 0){
+       int idx{0};
+       for(; idx < MAX_DIGITS; idx++) numTxt[idx] = 0;
+
+       idx=MAX_DIGITS-1;
+       for(; number > 0; number /= 10){
+           unsigned char digit { static_cast<unsigned char>(number % 10) };
+           numTxt[idx]         = digit;
+           idx--;
+       }
+
+       idx++;
+       for(; idx < MAX_DIGITS; idx++)
+           printDigit(numTxt[idx]);
+
+    } else {
+        printDigit(0);
+    }
 }
 
 #else
