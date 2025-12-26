@@ -40,7 +40,7 @@ uint64_t printScreen(const char* txt, uint64_t len){
           "i"  (1ULL),
           "r"  (txt),
           "r"  (len)
-        : "%rax", "%rdi", "%rsi", "%rdx");
+        : "%rax", "%rdi", "%rsi", "%rdx", "%rcx", "%r11");
 
     return ret > 0 ? ret: 0;
 }
@@ -55,7 +55,7 @@ void exit(bool err=false){
         : // void
         : "i"  (0x3cULL),
           "r"  (ret)
-        : "%rax", "%rdi");
+        : "%rax", "%rdi", "%rcx", "%r11");
 }
 
 uint64_t strnlen(const char* txt, uint64_t maxDigits){

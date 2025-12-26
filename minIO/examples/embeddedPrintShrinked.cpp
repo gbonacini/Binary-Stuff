@@ -12,7 +12,7 @@ int main(void){
    volatile uint64_t ret { printScreen(msg, strnlen(msg,9)) };
    printScreen("\nret:", 5);
    printNumber(ret);
-   printScreen("\n", 1);
+   printScreen("\nEND\n", 5);
    
    exit();
 }

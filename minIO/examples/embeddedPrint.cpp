@@ -15,7 +15,6 @@ int main(void){
    printNumber(ret);
    printScreen("\n", 1);
    printNumber(1234567890);
-   printScreen("\n", 1);
+   printScreen("\nEND\n", 5);
    exit();
 }
-
