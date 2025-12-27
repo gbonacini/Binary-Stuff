@@ -165,6 +165,44 @@ int close(int fd)  noexcept {
     return ret > 0 ? ret: -1;
 }
 
+int rename(const char *old, const char *neww)  noexcept {
+
+    int ret { -1 };
+    if(old == nullptr || neww == nullptr ) return ret;
+
+    asm volatile (
+        "\nmov %1, %%rax"
+        "\nmov %2, %%rdi"
+        "\nmov %3, %%rsi"
+        "\nsyscall"
+        "\nmov %%eax, %0"
+        : "=r" (ret)
+        : "i"  (0x52ULL),
+          "r"  (old),
+          "r"  (neww)
+        : "%rax", "%rdi", "%rsi", "%rcx", "%r11");
+
+    return ret;
+}
+
+int unlink(const char *todelete)  noexcept {
+
+    int ret { -1 };
+    if(todelete == nullptr ) return ret;
+
+    asm volatile (
+        "\nmov %1, %%rax"
+        "\nmov %2, %%rdi"
+        "\nsyscall"
+        "\nmov %%eax, %0"
+        : "=r" (ret)
+        : "i"  (0x57ULL),
+          "r"  (todelete)
+        : "%rax", "%rdi", "%rcx", "%r11");
+
+    return ret;
+}
+
 uint64_t strnlen(const char* txt, uint64_t maxDigits) noexcept {
 
     if(maxDigits == 0 || txt == nullptr) return 0;

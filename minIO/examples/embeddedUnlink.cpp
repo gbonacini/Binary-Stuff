@@ -4,11 +4,11 @@ int main(void){
 
    using minIO::strnlen,
          minIO::write,
-         minIO::read,
          minIO::printScreen,
          minIO::open,
          minIO::close,
-         minIO::rename,
+         minIO::unlink,
+         minIO::getChar,
          minIO::uint64_t,
          minIO::O_CREAT,
          minIO::O_WRONLY,
@@ -17,7 +17,7 @@ int main(void){
          minIO::S_IWUSR,
          minIO::exit;
 
-   int fd { open("./samplefile.txt", O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR)  };
+   int fd { open("./to_delete.txt", O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR)  };
    if(fd < 0 ){
        printScreen("\nERR\n", 5);
        exit(true);
@@ -27,19 +27,12 @@ int main(void){
    printScreen("\nWRT\n", 5);
    write(fd, msg,  strnlen(msg, 9));
    close(fd);
-   printScreen("\nRD\n", 4);
+   const char* gmsg { "press 'return' to delete the file and exit\n" };
+   printScreen(gmsg, strnlen(gmsg, 44));
+   while(true)
+      if(getChar() == '\n') break;
 
-   int rfd { open("./samplefile.txt", O_RDONLY)  };
-   if(rfd < 0 ){
-       printScreen("\nERR\n", 5);
-       exit(true);
-   }
-
-   char rmsg[9] {};
-   read(rfd, rmsg,  strnlen(msg, 9));
-   printScreen(rmsg, strnlen(rmsg, 9)); 
-   printScreen("\nREN\n", 5);
-   int rtt { rename("./samplefile.txt", "./new_samplefile.txt") };
+   int rtt { unlink("./to_delete.txt") };
    if(rtt < 0 ){
        printScreen("\nERR\n", 5);
        exit(true);

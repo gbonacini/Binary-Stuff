@@ -11,4 +11,5 @@ allign.sh
 *embeddedFileShrinked
 *samplefile.txt
 *embeddedGetc
+*embeddedUnlink
 
