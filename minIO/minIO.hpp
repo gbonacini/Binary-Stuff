@@ -108,6 +108,13 @@ uint64_t read(unsigned int fd, char* txt, uint64_t len) noexcept {
     return ret > 0 ? ret: 0;
 }
 
+char getChar(void){
+   char buff {0};
+   uint64_t ret { read(0, &buff, 1) };
+
+   return ret != 0 ? buff : 0;
+}
+
 void exit(bool err=false) noexcept {
 
     uint64_t ret { err ? 1ULL : 0ULL };
