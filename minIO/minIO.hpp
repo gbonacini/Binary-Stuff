@@ -68,10 +68,17 @@ uint64_t strnlen(const char* txt, uint64_t maxDigits){
     return len <= maxDigits ? len : 0;
 }
 
-void printDigit(unsigned char digit){
+const char* digitToTxt(unsigned char digit){
     static const char lookup[11] { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ' ' };
+    return &lookup[digit < 10 ? digit : 10];
+}
 
-    printScreen(&lookup[digit < 10 ? digit : 10], 1);
+char digitToChar(unsigned char digit){
+    return *digitToTxt(digit);
+}
+
+void printDigit(unsigned char digit){
+    printScreen(digitToTxt(digit), 1);
 }
 
 void printNumber(uint64_t number){
@@ -94,8 +101,37 @@ void printNumber(uint64_t number){
            printDigit(numTxt[idx]);
 
     } else {
-        printDigit(0);
+
+       printDigit(0);
+
     }
+}
+
+const char* numberToString(uint64_t number){
+    const unsigned int    MAX_DIGITS         { 20 };
+    static char           numTxt[MAX_DIGITS + 1];
+    
+    volatile int idx{0};
+    if(number != 0){
+       for(; idx <= MAX_DIGITS; idx++) numTxt[idx] = 0;
+
+       idx=MAX_DIGITS-1;
+       for(; number > 0; number /= 10){
+           unsigned char digit { static_cast<unsigned char>(number % 10) };
+           numTxt[idx]         = digitToChar(digit);
+           idx--;
+       }
+
+       idx++;
+
+    } else {
+
+       idx = MAX_DIGITS - 1;
+       numTxt[idx] = '0';
+
+    }
+
+    return numTxt + idx;
 }
 
 #else
