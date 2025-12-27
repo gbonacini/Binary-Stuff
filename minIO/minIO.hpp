@@ -23,28 +23,6 @@ namespace minIO {
 
 using uint64_t=unsigned long long;
 
-uint64_t printScreen(const char* txt, uint64_t len) noexcept {
-
-    long long ret { -1 };
-    if(len == 0 || txt == nullptr) return ret;
-
-    asm volatile (
-        "\nmov %1, %%rax"
-        "\nmov %2, %%rdi"
-        "\nmov %3, %%rsi"
-        "\nmov %4, %%rdx"
-        "\nsyscall"
-        "\nmov %%rax, %0"
-        : "=r" (ret)
-        : "i"  (1ULL),
-          "i"  (1ULL),
-          "r"  (txt),
-          "r"  (len)
-        : "%rax", "%rdi", "%rsi", "%rdx", "%rcx", "%r11");
-
-    return ret > 0 ? ret: 0;
-}
-
 uint64_t write(int fd, const char* txt, uint64_t len) noexcept {
 
     long long ret { -1 };
@@ -65,6 +43,10 @@ uint64_t write(int fd, const char* txt, uint64_t len) noexcept {
         : "%rax", "%rdi", "%rsi", "%rdx", "%rcx", "%r11");
 
     return ret > 0 ? ret: 0;
+}
+
+uint64_t printScreen(const char* txt, uint64_t len) noexcept {
+    return write(1, txt, len);
 }
 
 void exit(bool err=false) noexcept {
