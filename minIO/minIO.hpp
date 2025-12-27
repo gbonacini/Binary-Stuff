@@ -23,7 +23,7 @@ namespace minIO {
 
 using uint64_t=unsigned long long;
 
-uint64_t printScreen(const char* txt, uint64_t len){
+uint64_t printScreen(const char* txt, uint64_t len) noexcept {
 
     long long ret { -1 };
     if(len == 0 || txt == nullptr) return ret;
@@ -45,7 +45,7 @@ uint64_t printScreen(const char* txt, uint64_t len){
     return ret > 0 ? ret: 0;
 }
 
-void exit(bool err=false){
+void exit(bool err=false) noexcept {
 
     uint64_t ret { err ? 1ULL : 0ULL };
     asm volatile (
@@ -58,7 +58,7 @@ void exit(bool err=false){
         : "%rax", "%rdi", "%rcx", "%r11");
 }
 
-uint64_t strnlen(const char* txt, uint64_t maxDigits){
+uint64_t strnlen(const char* txt, uint64_t maxDigits) noexcept {
 
     if(maxDigits == 0 || txt == nullptr) return 0;
 
@@ -68,25 +68,25 @@ uint64_t strnlen(const char* txt, uint64_t maxDigits){
     return len <= maxDigits ? len : 0;
 }
 
-const char* digitToTxt(unsigned char digit){
+const char* digitToTxt(unsigned char digit) noexcept {
     static const char lookup[11] { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ' ' };
     return &lookup[digit < 10 ? digit : 10];
 }
 
-char digitToChar(unsigned char digit){
+char digitToChar(unsigned char digit) noexcept {
     return *digitToTxt(digit);
 }
 
-void printDigit(unsigned char digit){
+void printDigit(unsigned char digit) noexcept {
     printScreen(digitToTxt(digit), 1);
 }
 
-void printNumber(uint64_t number){
+void printNumber(uint64_t number) noexcept {
     const unsigned int    MAX_DIGITS         { 20 };
     static unsigned char  numTxt[MAX_DIGITS];
     
     if(number != 0){
-       volatile int idx{0};
+       int idx{0};
        for(; idx < MAX_DIGITS; idx++) numTxt[idx] = 0;
 
        idx=MAX_DIGITS-1;
@@ -107,11 +107,11 @@ void printNumber(uint64_t number){
     }
 }
 
-const char* numberToString(uint64_t number){
+const char* numberToString(uint64_t number) noexcept {
     const unsigned int    MAX_DIGITS         { 20 };
     static char           numTxt[MAX_DIGITS + 1];
     
-    volatile int idx{0};
+    int idx{0};
     if(number != 0){
        for(; idx <= MAX_DIGITS; idx++) numTxt[idx] = 0;
 
