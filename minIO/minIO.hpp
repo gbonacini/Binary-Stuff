@@ -45,6 +45,28 @@ uint64_t printScreen(const char* txt, uint64_t len) noexcept {
     return ret > 0 ? ret: 0;
 }
 
+uint64_t write(int fd, const char* txt, uint64_t len) noexcept {
+
+    long long ret { -1 };
+    if(len == 0 || txt == nullptr) return ret;
+
+    asm volatile (
+        "\nmov %1, %%rax"
+        "\nmov %2, %%rdi"
+        "\nmov %3, %%rsi"
+        "\nmov %4, %%rdx"
+        "\nsyscall"
+        "\nmov %%rax, %0"
+        : "=r" (ret)
+        : "i"  (1ULL),
+          "r"  (static_cast<uint64_t>(fd)),
+          "r"  (txt),
+          "r"  (len)
+        : "%rax", "%rdi", "%rsi", "%rdx", "%rcx", "%r11");
+
+    return ret > 0 ? ret: 0;
+}
+
 void exit(bool err=false) noexcept {
 
     uint64_t ret { err ? 1ULL : 0ULL };
