@@ -60,7 +60,7 @@ const mode_t S_EMPTY      {00000000},
              O_CLOEXEC    {02000000}; 
 
 
-uint64_t write(int fd, const char* txt, uint64_t len) noexcept {
+uint64_t write(unsigned int fd, const char* txt, uint64_t len) noexcept {
 
     long long ret { -1 };
     if(len == 0 || txt == nullptr) return ret;
@@ -84,6 +84,28 @@ uint64_t write(int fd, const char* txt, uint64_t len) noexcept {
 
 uint64_t printScreen(const char* txt, uint64_t len) noexcept {
     return write(1, txt, len);
+}
+
+uint64_t read(unsigned int fd, char* txt, uint64_t len) noexcept {
+
+    long long ret { -1 };
+    if(len == 0 || txt == nullptr) return ret;
+
+    asm volatile (
+        "\nmov %1, %%rax"
+        "\nmov %2, %%rdi"
+        "\nmov %3, %%rsi"
+        "\nmov %4, %%rdx"
+        "\nsyscall"
+        "\nmov %%rax, %0"
+        : "=r" (ret)
+        : "i"  (0ULL),
+          "r"  (static_cast<uint64_t>(fd)),
+          "r"  (txt),
+          "r"  (len)
+        : "%rax", "%rdi", "%rsi", "%rdx", "%rcx", "%r11", "memory");
+
+    return ret > 0 ? ret: 0;
 }
 
 void exit(bool err=false) noexcept {
