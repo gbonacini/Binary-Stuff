@@ -1,7 +1,7 @@
 CPP_FLAGS=-I.. -static -std=c++17 -fno-exceptions 
 NO_STD_LIB=-nostdlib -e main
 
-all : embeddedPrint embeddedPrint2 embeddedPrintShrinked embeddedPrintShrinked2 embeddedPrintStriped embeddedPrintShrinkedStriped compare_size
+all : embeddedPrint embeddedPrint2 embeddedPrintShrinked embeddedPrintShrinked2 embeddedPrintStriped embeddedPrintShrinkedStriped embeddedFileShrinked compare_size
 
 embeddedPrint : embeddedPrint.cpp
 	g++ $(CPP_FLAGS) -O0 -o embeddedPrint embeddedPrint.cpp
@@ -14,6 +14,9 @@ embeddedPrint2 : embeddedPrint.cpp
 
 embeddedPrintShrinked2 : embeddedPrintShrinked.cpp
 	g++ $(NO_STD_LIB) $(CPP_FLAGS) -O2 -o embeddedPrintShrinked2 embeddedPrintShrinked.cpp
+
+embeddedFileShrinked : embeddedFileShrinked.cpp
+	g++ $(NO_STD_LIB) $(CPP_FLAGS) -O2 -o embeddedFileShrinked embeddedFileShrinked.cpp
 
 compare_size :  embeddedPrint embeddedPrintStriped embeddedPrintShrinked
 	@echo "\nNote thed differences in size between the executables just created:\n"
@@ -33,4 +36,4 @@ embeddedPrintShrinkedStriped: embeddedPrintShrinked
 	strip embeddedPrintShrinkedStriped
 
 clean:
-	rm -f embeddedPrint embeddedPrint2 embeddedPrintStriped embeddedPrintShrinked embeddedPrintShrinked2 embeddedPrintShrinkedStriped
+	rm -f embeddedPrint embeddedPrint2 embeddedPrintStriped embeddedPrintShrinked embeddedPrintShrinked2 embeddedPrintShrinkedStriped embeddedFileShrinked
