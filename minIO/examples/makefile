@@ -39,4 +39,4 @@ embeddedPrintShrinkedStriped: embeddedPrintShrinked
 	strip embeddedPrintShrinkedStriped
 
 clean:
-	rm -f embeddedPrint embeddedPrint2 embeddedPrintStriped embeddedPrintShrinked embeddedPrintShrinked2 embeddedPrintShrinkedStriped embeddedFileShrinked embeddedGetc
+	rm -f embeddedPrint embeddedPrint2 embeddedPrintStriped embeddedPrintShrinked embeddedPrintShrinked2 embeddedPrintShrinkedStriped embeddedFileShrinked embeddedGetc samplefile.txt
