@@ -22,6 +22,10 @@ namespace minIO {
 #if defined(__x86_64__)
 
 using uint64_t=unsigned long long;
+using uint32_t=unsigned int;
+using uint16_t=unsigned short;
+using uchar=unsigned char;
+
 using mode_t=unsigned int;
 
 const mode_t S_EMPTY      {00000000},  
@@ -60,7 +64,7 @@ const mode_t S_EMPTY      {00000000},
              O_CLOEXEC    {02000000}; 
 
 
-uint64_t write(unsigned int fd, const char* txt, uint64_t len) noexcept {
+uint64_t write(uint32_t fd, const char* txt, uint64_t len) noexcept {
 
     long long ret { -1 };
     if(len == 0 || txt == nullptr) return ret;
@@ -86,7 +90,7 @@ uint64_t printScreen(const char* txt, uint64_t len) noexcept {
     return write(1, txt, len);
 }
 
-uint64_t read(unsigned int fd, char* txt, uint64_t len) noexcept {
+uint64_t read(uint32_t fd, char* txt, uint64_t len) noexcept {
 
     long long ret { -1 };
     if(len == 0 || txt == nullptr) return ret;
@@ -213,22 +217,22 @@ uint64_t strnlen(const char* txt, uint64_t maxDigits) noexcept {
     return len <= maxDigits ? len : 0;
 }
 
-const char* digitToTxt(unsigned char digit) noexcept {
+const char* digitToTxt(uchar digit) noexcept {
     static const char lookup[11] { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ' ' };
     return &lookup[digit < 10 ? digit : 10];
 }
 
-char digitToChar(unsigned char digit) noexcept {
+char digitToChar(uchar digit) noexcept {
     return *digitToTxt(digit);
 }
 
-void printDigit(unsigned char digit) noexcept {
+void printDigit(uchar digit) noexcept {
     printScreen(digitToTxt(digit), 1);
 }
 
 void printNumber(uint64_t number) noexcept {
-    const unsigned int    MAX_DIGITS         { 20 };
-    static unsigned char  numTxt[MAX_DIGITS];
+    const  uint32_t    MAX_DIGITS         { 20 };
+    static uchar       numTxt[MAX_DIGITS];
     
     if(number != 0){
        int idx{0};
@@ -236,7 +240,7 @@ void printNumber(uint64_t number) noexcept {
 
        idx=MAX_DIGITS-1;
        for(; number > 0; number /= 10){
-           unsigned char digit { static_cast<unsigned char>(number % 10) };
+           uchar digit         { static_cast<uchar>(number % 10) };
            numTxt[idx]         = digit;
            idx--;
        }
@@ -253,8 +257,8 @@ void printNumber(uint64_t number) noexcept {
 }
 
 const char* numberToString(uint64_t number) noexcept {
-    const unsigned int    MAX_DIGITS         { 20 };
-    static char           numTxt[MAX_DIGITS + 1];
+    const uint32_t    MAX_DIGITS         { 20 };
+    static char       numTxt[MAX_DIGITS + 1];
     
     int idx{0};
     if(number != 0){
@@ -262,7 +266,7 @@ const char* numberToString(uint64_t number) noexcept {
 
        idx=MAX_DIGITS-1;
        for(; number > 0; number /= 10){
-           unsigned char digit { static_cast<unsigned char>(number % 10) };
+           uchar digit         { static_cast<uchar>(number % 10) };
            numTxt[idx]         = digitToChar(digit);
            idx--;
        }
@@ -277,6 +281,120 @@ const char* numberToString(uint64_t number) noexcept {
     }
 
     return numTxt + idx;
+}
+
+struct sockaddr {
+  short          sin_family;   // AF_INET
+  uint16_t       sin_port;     // Port in network byte order
+  uint32_t       sin_addr;     // IPv4 address in network byte order
+  uchar          sin_zero[8];  // Padding to match struct sockaddr
+};
+
+using Sockaddr=struct sockaddr;
+
+enum SOCK_TYPE : uint32_t {
+        // For now, only limited support
+	SOCK_STREAM	= 1,
+	SOCK_DGRAM	= 2
+        /* 
+	SOCK_RAW	= 3,
+	SOCK_RDM	= 4,
+	SOCK_SEQPACKET	= 5,
+	SOCK_DCCP	= 6,
+	SOCK_PACKET	= 10
+        */
+};
+
+enum PROTOCOL_TYPE : uint32_t {
+  // For now, only limited support
+  IPPROTO_IP=0,       // Dummy protocol for TCP
+  // IPPROTO_ICMP=1,  // Internet Control Message Protocol
+  IPPROTO_TCP=6,      // Transmission Control Protocol
+  IPPROTO_UDP=17      // User Datagram Protocol
+};
+
+enum FAMILY_TYPE : uint32_t {
+    // For now, only limited support
+    AF_INET=2
+};
+
+int socket(SOCK_TYPE type, PROTOCOL_TYPE protocol)  noexcept {
+
+    int ret { -1 };
+
+    asm volatile (
+        "\nmov %1, %%rax"
+        "\nmov %2, %%edi"
+        "\nmov %3, %%esi"
+        "\nmov %4, %%edx"
+        "\nsyscall"
+        "\nmov %%eax, %0"
+        : "=r" (ret)
+        : "i"  (0x29ULL),
+          "i"  (FAMILY_TYPE::AF_INET),
+          "r"  (type),
+          "r"  (protocol)
+        : "%rax", "%rdi", "%rsi", "%rdx", "%rcx", "%r11");
+
+    return ret < 0 ? -1: ret;
+}
+
+int connect(uint32_t sockfd, const Sockaddr* addr, uint64_t addrlen) noexcept {
+
+    int ret { -1 };
+
+    asm volatile (
+        "\nmov %1, %%rax"
+        "\nmov %2, %%edi"
+        "\nmov %3, %%rsi"
+        "\nmov %4, %%rdx"
+        "\nsyscall"
+        "\nmov %%eax, %0"
+        : "=r" (ret)
+        : "i"  (0x2aULL),
+          "r"  (sockfd),
+          "r"  (addr),
+          "r"  (addrlen)
+        : "%rax", "%rdi", "%rsi", "%rdx", "%rcx", "%r11");
+
+    return ret < 0 ? -1 : ret;
+}
+
+enum SHUTDOWN_TYPE : uint32_t {
+       SHUT_RD=0,
+       SHUT_WR=1,
+       SHUT_RDWR=2
+};
+
+int shutdown(uint32_t sockfd, SHUTDOWN_TYPE type) noexcept {
+
+    int ret { -1 };
+
+    asm volatile (
+        "\nmov %1, %%rax"
+        "\nmov %2, %%edi"
+        "\nmov %3, %%esi"
+        "\nsyscall"
+        "\nmov %%eax, %0"
+        : "=r" (ret)
+        : "i"  (0x30ULL),
+          "r"  (sockfd),
+          "r"  (type)
+        : "%rax", "%rdi", "%rsi", "%rcx", "%r11");
+
+    return ret > 0 ? ret: -1;
+}
+
+uint16_t htons(uint16_t in) noexcept {
+   return ((in  & 0xff) << 8) | ((in >> 8) & 0xff);
+}
+
+void setIp(Sockaddr& in, uchar oct1, uchar oct2, uchar oct3, uchar oct4) noexcept {
+   uchar* hdlr { reinterpret_cast<uchar*>(&(in.sin_addr)) };
+   hdlr[0] = oct1;
+   hdlr[1] = oct2;
+   hdlr[2] = oct3;
+   hdlr[3] = oct4;
 }
 
 #else
