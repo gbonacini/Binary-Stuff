@@ -81,7 +81,7 @@ uint64_t write(uint32_t fd, const char* txt, uint64_t len) noexcept {
           "r"  (static_cast<uint64_t>(fd)),
           "r"  (txt),
           "r"  (len)
-        : "%rax", "%rdi", "%rsi", "%rdx", "%rcx", "%r11");
+        : "%rax", "%rdi", "%rsi", "%rdx", "%rcx", "%r11", "memory");
 
     return ret > 0 ? ret: 0;
 }
@@ -149,7 +149,7 @@ int open(const char *path, mode_t flags, mode_t mode=S_EMPTY)  noexcept {
           "r"  (path),
           "r"  (flags),
           "r"  (mode)
-        : "%rax", "%rdi", "%rsi", "%rdx", "%rcx", "%r11");
+        : "%rax", "%rdi", "%rsi", "%rdx", "%rcx", "%r11", "memory");
 
     return ret > 0 ? ret: -1;
 }
@@ -184,7 +184,7 @@ int rename(const char *old, const char *neww)  noexcept {
         : "i"  (0x52ULL),
           "r"  (old),
           "r"  (neww)
-        : "%rax", "%rdi", "%rsi", "%rcx", "%r11");
+        : "%rax", "%rdi", "%rsi", "%rcx", "%r11", "memory");
 
     return ret;
 }
@@ -202,7 +202,7 @@ int unlink(const char *todelete)  noexcept {
         : "=r" (ret)
         : "i"  (0x57ULL),
           "r"  (todelete)
-        : "%rax", "%rdi", "%rcx", "%r11");
+        : "%rax", "%rdi", "%rcx", "%r11", "memory");
 
     return ret;
 }
@@ -355,7 +355,7 @@ int connect(uint32_t sockfd, const Sockaddr* addr, uint64_t addrlen) noexcept {
           "r"  (sockfd),
           "r"  (addr),
           "r"  (addrlen)
-        : "%rax", "%rdi", "%rsi", "%rdx", "%rcx", "%r11");
+        : "%rax", "%rdi", "%rsi", "%rdx", "%rcx", "%r11", "memory");
 
     return ret < 0 ? -1 : ret;
 }
