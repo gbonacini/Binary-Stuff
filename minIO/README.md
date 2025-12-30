@@ -1,7 +1,8 @@
 Description:
 ============
 
-* This concept shows how to do I/O in C++ without using any part of standard library (no dependencies, no stdlib include file, no link);
+* This mini library shows how to do I/O in C++ without using any part of standard library (no dependencies, no stdlib include file, no link);
 * In order to do that, an inline assembly code wrap directly Linux sycalls;
+* This library suports: read/write from/to terminal (stdin / stdout) or files, connection to tcp socket servers (tcp client) and some minimal utilities to handle strings, etc;
 * See "examples" directory for demos.
 
