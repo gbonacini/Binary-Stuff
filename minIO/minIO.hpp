@@ -21,6 +21,7 @@ namespace minIO {
 
 #if defined(__x86_64__)
 
+using int64_t=long long;
 using uint64_t=unsigned long long;
 using uint32_t=unsigned int;
 using uint16_t=unsigned short;
@@ -66,7 +67,7 @@ const mode_t S_EMPTY      {00000000},
 
 uint64_t write(uint32_t fd, const char* txt, uint64_t len) noexcept {
 
-    long long ret { -1 };
+    int64_t ret { -1 };
     if(len == 0 || txt == nullptr) return ret;
 
     asm volatile (
@@ -92,7 +93,7 @@ uint64_t printScreen(const char* txt, uint64_t len) noexcept {
 
 uint64_t read(uint32_t fd, char* txt, uint64_t len) noexcept {
 
-    long long ret { -1 };
+    int64_t ret { -1 };
     if(len == 0 || txt == nullptr) return ret;
 
     asm volatile (
@@ -151,7 +152,7 @@ int open(const char *path, mode_t flags, mode_t mode=S_EMPTY)  noexcept {
           "r"  (mode)
         : "%rax", "%rdi", "%rsi", "%rdx", "%rcx", "%r11", "memory");
 
-    return ret > 0 ? ret: -1;
+    return ret;
 }
 
 int close(int fd)  noexcept {
@@ -166,7 +167,7 @@ int close(int fd)  noexcept {
         : "i"  (0x03ULL)
         : "%rax", "%rcx", "%r11");
 
-    return ret > 0 ? ret: -1;
+    return ret;
 }
 
 int rename(const char *old, const char *neww)  noexcept {
@@ -336,7 +337,7 @@ int socket(SOCK_TYPE type, PROTOCOL_TYPE protocol)  noexcept {
           "r"  (protocol)
         : "%rax", "%rdi", "%rsi", "%rdx", "%rcx", "%r11");
 
-    return ret < 0 ? -1: ret;
+    return ret;
 }
 
 int connect(uint32_t sockfd, const Sockaddr* addr, uint64_t addrlen) noexcept {
@@ -357,7 +358,7 @@ int connect(uint32_t sockfd, const Sockaddr* addr, uint64_t addrlen) noexcept {
           "r"  (addrlen)
         : "%rax", "%rdi", "%rsi", "%rdx", "%rcx", "%r11", "memory");
 
-    return ret < 0 ? -1 : ret;
+    return ret;
 }
 
 enum SHUTDOWN_TYPE : uint32_t {
@@ -382,7 +383,7 @@ int shutdown(uint32_t sockfd, SHUTDOWN_TYPE type) noexcept {
           "r"  (type)
         : "%rax", "%rdi", "%rsi", "%rcx", "%r11");
 
-    return ret > 0 ? ret: -1;
+    return ret;
 }
 
 uint16_t htons(uint16_t in) noexcept {
