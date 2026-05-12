@@ -1,6 +1,9 @@
 // -----------------------------------------------------------------
 // Copyright (C) 2025  Gabriele Bonacini
 //
+// MinIO a cstdlib like self-consistent library written using c++ 
+// and inline asm
+//
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation; either version 3 of the License, or
@@ -14,7 +17,6 @@
 // Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 // -----------------------------------------------------------------
 
-
 #pragma once
 
 namespace minIO {
@@ -22,10 +24,14 @@ namespace minIO {
 #if defined(__x86_64__)
 
 using int64_t=long long;
+using uchar=unsigned char;
 using uint64_t=unsigned long long;
 using uint32_t=unsigned int;
 using uint16_t=unsigned short;
-using uchar=unsigned char;
+using size_t=unsigned long long;
+using ssize_t=long long;
+using loff_t=long long;
+using socklen_t=unsigned int;
 
 using mode_t=unsigned int;
 
@@ -65,10 +71,10 @@ const mode_t S_EMPTY      {00000000},
              O_CLOEXEC    {02000000}; 
 
 
-uint64_t write(uint32_t fd, const char* txt, uint64_t len) noexcept {
+ssize_t write(int fd, const char* txt, size_t len) noexcept {
 
-    int64_t ret { -1 };
-    if(len == 0 || txt == nullptr) return ret;
+    ssize_t ret { -1 };
+    if(fd < 0 || len == 0 || txt == nullptr) return ret;
 
     asm volatile (
         "\nmov %1, %%rax"
@@ -81,20 +87,20 @@ uint64_t write(uint32_t fd, const char* txt, uint64_t len) noexcept {
         : "i"  (1ULL),
           "r"  (static_cast<uint64_t>(fd)),
           "r"  (txt),
-          "r"  (len)
+          "r"  (static_cast<uint64_t>(len))
         : "%rax", "%rdi", "%rsi", "%rdx", "%rcx", "%r11", "memory");
 
-    return ret > 0 ? ret: 0;
+    return ret;
 }
 
-uint64_t printScreen(const char* txt, uint64_t len) noexcept {
+int64_t printScreen(const char* txt, uint64_t len) noexcept {
     return write(1, txt, len);
 }
 
-uint64_t read(uint32_t fd, char* txt, uint64_t len) noexcept {
+ssize_t read(int fd, char* txt, size_t len) noexcept {
 
-    int64_t ret { -1 };
-    if(len == 0 || txt == nullptr) return ret;
+    ssize_t ret { -1 };
+    if(fd < 0 || len == 0 || txt == nullptr) return ret;
 
     asm volatile (
         "\nmov %1, %%rax"
@@ -110,14 +116,26 @@ uint64_t read(uint32_t fd, char* txt, uint64_t len) noexcept {
           "r"  (len)
         : "%rax", "%rdi", "%rsi", "%rdx", "%rcx", "%r11", "memory");
 
-    return ret > 0 ? ret: 0;
+    return ret;
+}
+
+ssize_t copy_n(const uchar* in, size_t len, uchar* out){
+     ssize_t ret { -1 };
+     if(in == nullptr || out ==nullptr || len == 0)
+          return ret;
+
+     for(size_t idx{0}; idx<len; idx++){
+         out[idx] = in[idx];
+     }
+
+     return len;
 }
 
 char getChar(void){
    char buff {0};
-   uint64_t ret { read(0, &buff, 1) };
+   auto ret { read(0, &buff, 1) };
 
-   return ret != 0 ? buff : 0;
+   return ret != -1 ? buff : 0;
 }
 
 void exit(bool err=false) noexcept {
@@ -133,46 +151,49 @@ void exit(bool err=false) noexcept {
         : "%rax", "%rdi", "%rcx", "%r11");
 }
 
-int open(const char *path, mode_t flags, mode_t mode=S_EMPTY)  noexcept {
+int64_t open(const char *path, mode_t flags, mode_t mode=S_EMPTY)  noexcept {
 
-    int ret { -1 };
+    int64_t ret { -1 };
     if(path == nullptr) return ret;
 
     asm volatile (
         "\nmov %1, %%rax"
         "\nmov %2, %%rdi"
-        "\nmov %3, %%esi"
-        "\nmov %4, %%edx"
+        "\nmov %3, %%rsi"
+        "\nmov %4, %%rdx"
         "\nsyscall"
-        "\nmov %%eax, %0"
+        "\nmov %%rax, %0"
         : "=r" (ret)
         : "i"  (0x02ULL),
           "r"  (path),
-          "r"  (flags),
-          "r"  (mode)
+          "r"  (static_cast<uint64_t>(flags)),
+          "r"  (static_cast<uint64_t>(mode))
         : "%rax", "%rdi", "%rsi", "%rdx", "%rcx", "%r11", "memory");
 
     return ret;
 }
 
-int close(int fd)  noexcept {
+int64_t close(int fd)  noexcept {
 
-    int ret { -1 };
+    int64_t ret { -1 };
+    if(fd < 0) return ret;
 
     asm volatile (
         "\nmov %1, %%rax"
+        "\nmov %2, %%rdi"
         "\nsyscall"
-        "\nmov %%eax, %0"
+        "\nmov %%rax, %0"
         : "=r" (ret)
-        : "i"  (0x03ULL)
-        : "%rax", "%rcx", "%r11");
+        : "i"  (0x03ULL),
+          "r"  (static_cast<uint64_t>(fd))
+        : "%rax", "%rdi", "%rcx", "%r11");
 
     return ret;
 }
 
-int rename(const char *old, const char *neww)  noexcept {
+int64_t rename(const char *old, const char *neww)  noexcept {
 
-    int ret { -1 };
+    int64_t ret { -1 };
     if(old == nullptr || neww == nullptr ) return ret;
 
     asm volatile (
@@ -180,7 +201,7 @@ int rename(const char *old, const char *neww)  noexcept {
         "\nmov %2, %%rdi"
         "\nmov %3, %%rsi"
         "\nsyscall"
-        "\nmov %%eax, %0"
+        "\nmov %%rax, %0"
         : "=r" (ret)
         : "i"  (0x52ULL),
           "r"  (old),
@@ -190,16 +211,16 @@ int rename(const char *old, const char *neww)  noexcept {
     return ret;
 }
 
-int unlink(const char *todelete)  noexcept {
+int64_t unlink(const char *todelete)  noexcept {
 
-    int ret { -1 };
+    int64_t ret { -1 };
     if(todelete == nullptr ) return ret;
 
     asm volatile (
         "\nmov %1, %%rax"
         "\nmov %2, %%rdi"
         "\nsyscall"
-        "\nmov %%eax, %0"
+        "\nmov %%rax, %0"
         : "=r" (ret)
         : "i"  (0x57ULL),
           "r"  (todelete)
@@ -208,11 +229,11 @@ int unlink(const char *todelete)  noexcept {
     return ret;
 }
 
-uint64_t strnlen(const char* txt, uint64_t maxDigits) noexcept {
+size_t strnlen(const char* txt, uint64_t maxDigits) noexcept {
 
     if(maxDigits == 0 || txt == nullptr) return 0;
 
-    uint64_t len { 0 };
+    size_t len { 0 };
     for( ; txt[len] != 0 && len < maxDigits; len++);
 
     return len <= maxDigits ? len : 0;
@@ -275,10 +296,8 @@ const char* numberToString(uint64_t number) noexcept {
        idx++;
 
     } else {
-
        idx = MAX_DIGITS - 1;
        numTxt[idx] = '0';
-
     }
 
     return numTxt + idx;
@@ -293,10 +312,15 @@ struct sockaddr {
 
 using Sockaddr=struct sockaddr;
 
+enum FLAGS : uint32_t {
+      MSG_MORE		= 0x8000
+};
+
 enum SOCK_TYPE : uint32_t {
         // For now, only limited support
-	SOCK_STREAM	= 1,
-	SOCK_DGRAM	= 2
+	SOCK_STREAM	   = 1,
+	SOCK_DGRAM	   = 2,
+    SOCK_SEQPACKET = 5
         /* 
 	SOCK_RAW	= 3,
 	SOCK_RDM	= 4,
@@ -308,6 +332,7 @@ enum SOCK_TYPE : uint32_t {
 
 enum PROTOCOL_TYPE : uint32_t {
   // For now, only limited support
+  DEFAULT=0,          // Dummy protocol for TCP
   IPPROTO_IP=0,       // Dummy protocol for TCP
   // IPPROTO_ICMP=1,  // Internet Control Message Protocol
   IPPROTO_TCP=6,      // Transmission Control Protocol
@@ -316,7 +341,20 @@ enum PROTOCOL_TYPE : uint32_t {
 
 enum FAMILY_TYPE : uint32_t {
     // For now, only limited support
-    AF_INET=2
+    AF_INET= 2,
+    AF_ALG = 38
+};
+
+enum SOCK_LEVELS : uint32_t{
+    SOL_ALG=279
+};
+
+enum SOCK_ALGORITMS : uint32_t {
+    ALG_SET_KEY=1,
+    ALG_SET_IV=2,
+    ALG_SET_OP=3,
+    ALG_SET_AEAD_ASSOCLEN=4,
+    ALG_SET_AEAD_AUTHSIZE=5
 };
 
 int socket(SOCK_TYPE type, PROTOCOL_TYPE protocol)  noexcept {
@@ -340,9 +378,31 @@ int socket(SOCK_TYPE type, PROTOCOL_TYPE protocol)  noexcept {
     return ret;
 }
 
-int connect(uint32_t sockfd, const Sockaddr* addr, uint64_t addrlen) noexcept {
+int socket(FAMILY_TYPE ft, SOCK_TYPE type, PROTOCOL_TYPE protocol)  noexcept {
 
     int ret { -1 };
+
+    asm volatile (
+        "\nmov %1, %%rax"
+        "\nmov %2, %%rdi"
+        "\nmov %3, %%rsi"
+        "\nmov %4, %%rdx"
+        "\nsyscall"
+        "\nmov %%eax, %0"
+        : "=r" (ret)
+        : "i"  (0x29ULL),
+          "r"  (static_cast<uint64_t>(ft)),
+          "r"  (static_cast<uint64_t>(type)),
+          "r"  (static_cast<uint64_t>(protocol))
+        : "%rax", "%rdi", "%rsi", "%rdx", "%rcx", "%r11");
+
+    return ret;
+}
+
+int64_t connect(int sockfd, const Sockaddr* addr, uint64_t addrlen) noexcept {
+
+    int64_t ret { -1 };
+    if(sockfd < 0 || addr == nullptr || addrlen == 0) return ret;
 
     asm volatile (
         "\nmov %1, %%rax"
@@ -350,7 +410,7 @@ int connect(uint32_t sockfd, const Sockaddr* addr, uint64_t addrlen) noexcept {
         "\nmov %3, %%rsi"
         "\nmov %4, %%rdx"
         "\nsyscall"
-        "\nmov %%eax, %0"
+        "\nmov %%rax, %0"
         : "=r" (ret)
         : "i"  (0x2aULL),
           "r"  (sockfd),
@@ -361,22 +421,239 @@ int connect(uint32_t sockfd, const Sockaddr* addr, uint64_t addrlen) noexcept {
     return ret;
 }
 
+int64_t bind(int sockfd, const Sockaddr* addr, socklen_t addrlen){
+
+    int64_t ret { -1 };
+    if(sockfd < 0 || addr ==nullptr || addrlen == 0) return ret;
+
+    asm volatile (
+        "\nmov %1, %%rax"
+        "\nmov %2, %%rdi"
+        "\nmov %3, %%rsi"
+        "\nmov %4, %%rdx"
+        "\nsyscall"
+        "\nmov %%rax, %0"
+        : "=r" (ret)
+        : "i"  (0x31ULL),
+          "r"  (static_cast<uint64_t>(sockfd)),
+          "r"  (addr),
+          "r"  (static_cast<uint64_t>(addrlen))
+        : "%rax", "%rdi", "%rsi", "%rdx", "%rcx", "%r11", "memory");
+
+    return ret;
+}
+
+int64_t setsockopt(int sockfd, uint32_t level, int optname, const void *optval, socklen_t optlen){
+
+    int64_t ret { -1 };
+    if(sockfd < 0 || level < 0 || optname < 0 || optlen == 0) return ret;
+
+    asm volatile (
+        "\nmov %1, %%rax"
+        "\nmov %2, %%rdi"
+        "\nmov %3, %%rsi"
+        "\nmov %4, %%rdx"
+        "\nmov %5, %%r10"
+        "\nmov %6, %%r8"
+        "\nsyscall"
+        "\nmov %%rax, %0"
+        : "=r" (ret)
+        : "i"  (0x36ULL),
+          "r"  (static_cast<uint64_t>(sockfd)),
+          "r"  (static_cast<uint64_t>(level)),
+          "r"  (static_cast<uint64_t>(optname)),
+          "r"  (optval),
+          "r"  (static_cast<uint64_t>(optlen))
+        : "%rax", "%rdi", "%rsi", "%rdx", "%r10", "%r8", "%rcx", "%r11", "memory");
+
+    return ret;
+}
+
+int64_t accept(int sockfd, struct sockaddr* addr , socklen_t* len) noexcept {
+
+    int64_t ret { -1 };
+    if(sockfd < 0 ) return ret;
+
+    asm volatile (
+        "\nmov %1, %%rax"
+        "\nmov %2, %%rdi"
+        "\nmov %3, %%rsi"
+        "\nmov %4, %%rdx"
+        "\nsyscall"
+        "\nmov %%rax, %0"
+        : "=r" (ret)
+        : "i"  (0x2BULL),
+          "r"  (static_cast<uint64_t>(sockfd)),
+          "r"  (addr),
+          "r"  (len)
+        : "%rax", "%rdi", "%rsi", "%rdx", "%rcx", "%r11", "memory");
+
+    return ret;
+}
+
+int execve(const char *pathname, char *const argv[], char *const envp[]){
+
+    int ret { -1 };
+    if(pathname == nullptr || argv == nullptr) return ret;
+
+    asm volatile (
+        "\nmov %0, %%rax"
+        "\nmov %1, %%rdi"
+        "\nmov %2, %%rsi"
+        "\nmov %3, %%rdx"
+        "\nsyscall"
+        : // void
+        : "i"  (0x3BULL),
+          "r"  (pathname),
+          "r"  (argv),
+          "r"  (envp)
+        : "%rax", "%rdi", "%rsi", "%rdx", "memory");
+
+    return ret;
+}
+
+ssize_t splice(int fd_in, loff_t *off_in, int fd_out, loff_t *off_out, size_t len, unsigned int flags){
+
+    ssize_t ret { -1 };
+    if(fd_in < 0 || fd_out < 0 ) return ret;
+
+    asm volatile (
+        "\nmov %1, %%rax"
+        "\nmov %2, %%rdi"
+        "\nmov %3, %%rsi"
+        "\nmov %4, %%rdx"
+        "\nmov %5, %%r10"
+        "\nmov %6, %%r8"
+        "\nmov %7, %%r9"
+        "\nsyscall"
+        "\nmov %%rax, %0"
+        : "=r" (ret)
+        : "i"  (0x113ULL),
+          "g"  (static_cast<uint64_t>(fd_in)),
+          "g"  (off_in),
+          "g"  (static_cast<uint64_t>(fd_out)),
+          "g"  (off_out),
+          "g"  (len),
+          "g"  (static_cast<uint64_t>(flags))
+        : "%rax", "%rdi", "%rsi", "%rdx", "%r10", "%r8", "%r9", "%rcx", "%r11", "memory");
+
+    return ret;
+}
+
+struct af_alg_iv {
+	uint32_t	    ivlen;
+	unsigned char	iv[0];
+};
+
+struct sockaddr_alg {
+	uint16_t	    salg_family;
+	unsigned char	salg_type[14];
+	uint32_t	    salg_feat;
+	uint32_t	    salg_mask;
+	unsigned char	salg_name[64];
+};
+
+struct iovec {
+    void*        iov_base;        // Starting address 
+    size_t       iov_len;         // Size of the memory pointed to by iov_base. 
+};
+
+ struct msghdr {
+    void*         msg_name;       // Optional address 
+    socklen_t     msg_namelen;    // Size of address 
+    struct iovec* msg_iov;        // Scatter/gather array 
+    size_t        msg_iovlen;     // # elements in msg_iov 
+    void*         msg_control;    // Ancillary data, see below 
+    size_t        msg_controllen; // Ancillary data buffer len 
+    int           msg_flags;      // Flags (unused) 
+ };
+
+/* Structure used for storage of ancillary data object information.  */
+struct cmsghdr {
+    size_t cmsg_len;		      // Length of data in cmsg_data plus length
+				                  // of cmsghdr structure.
+				                  // !! The type should be socklen_t but the
+				                  // definition of the kernel is incompatible
+				                  // with this. 
+
+    int cmsg_level;		          // Originating protocol.
+    int cmsg_type;		          // Protocol specific type.
+};
+
+#define CMSG_FIRSTHDR(mhdr) ((size_t) (mhdr)->msg_controllen >= sizeof(struct minIO::cmsghdr)	\
+   ? reinterpret_cast<struct minIO::cmsghdr *>((mhdr)->msg_control) : nullptr)
+
+#define CMSG_ALIGN(len) (((len) + sizeof(size_t) - 1) & (size_t) ~(sizeof(size_t) - 1))
+
+#define CMSG_SPACE(len) (CMSG_ALIGN (len) + CMSG_ALIGN (sizeof(struct minIO::cmsghdr)))
+
+#define CMSG_DATA(cmsg) (reinterpret_cast<unsigned char *>(((struct minIO::cmsghdr *) (cmsg) + 1)))
+
+#define CMSG_NXTHDR(mhdr, cmsg) __cmsg_nxthdr (mhdr, cmsg)
+
+#define CMSG_LEN(len)   (CMSG_ALIGN ( sizeof(struct minIO::cmsghdr) ) + (len))
+
+static inline struct cmsghdr * __cmsg_nxthdr (void *__ctl, struct cmsghdr *__cmsg) {
+   return  reinterpret_cast<struct cmsghdr*>((((unsigned char *) __cmsg) + CMSG_ALIGN(__cmsg->cmsg_len)));
+}
+
+ssize_t sendmsg(int sockfd, const struct msghdr *msg, int flags){
+
+    ssize_t ret { -1 };
+    if(sockfd < 0 || msg == nullptr ) return ret;
+
+    asm volatile (
+        "\nmov %1, %%rax"
+        "\nmov %2, %%rdi"
+        "\nmov %3, %%rsi"
+        "\nmov %4, %%rdx"
+        "\nsyscall"
+        "\nmov %%rax, %0"
+        : "=r" (ret)
+        : "i"  (0x2EULL),
+          "r"  (static_cast<uint64_t>(sockfd)),
+          "r"  (msg),
+          "r"  (static_cast<uint64_t>(flags))
+        : "%rax", "%rdi", "%rsi", "%rdx", "%rcx", "%r11", "memory");
+
+    return ret;
+}
+
+int64_t pipe(int pipefd[2]){
+
+    int64_t ret { -1 };
+    if(pipefd == nullptr) return ret;
+
+    asm volatile (
+        "\nmov %1, %%rax"
+        "\nmov %2, %%rdi"
+        "\nsyscall"
+        "\nmov %%rax, %0"
+        : "=r" (ret)
+        : "i"  (0x16ULL),
+          "r"  (pipefd)
+        : "%rax", "%rdi", "%rcx", "%r11", "memory");
+
+    return ret;
+}
+
 enum SHUTDOWN_TYPE : uint32_t {
        SHUT_RD=0,
        SHUT_WR=1,
        SHUT_RDWR=2
 };
 
-int shutdown(uint32_t sockfd, SHUTDOWN_TYPE type) noexcept {
+int64_t shutdown(int sockfd, SHUTDOWN_TYPE type) noexcept {
 
-    int ret { -1 };
+    int64_t ret { -1 };
+    if(sockfd < 0 ) return ret;
 
     asm volatile (
         "\nmov %1, %%rax"
         "\nmov %2, %%edi"
         "\nmov %3, %%esi"
         "\nsyscall"
-        "\nmov %%eax, %0"
+        "\nmov %%rax, %0"
         : "=r" (ret)
         : "i"  (0x30ULL),
           "r"  (sockfd),
@@ -403,4 +680,3 @@ void setIp(Sockaddr& in, uchar oct1, uchar oct2, uchar oct3, uchar oct4) noexcep
 #endif
 
 } // End Namespace
-
